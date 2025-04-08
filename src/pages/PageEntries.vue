@@ -48,7 +48,7 @@
             type="number" step="0.01" outlined dense />
         </div>
         <div class="col col-auto">
-          <q-btn color="primary" icon="add" type="submit" round />
+          <q-btn color="primary" icon="add" type="submit" round @click="saveEntriesToFile" />
         </div>
       </q-form>
     </q-footer>
@@ -86,54 +86,7 @@ const $q = useQuasar()
 
 
 const entries = ref([
-  {
-    id: 'id1',
-    name: 'Salary',
-    amount: 3000,
-    category: 'income'
-  },
-  {
-    id: 'id2',
-    name: 'Rent',
-    amount: -999,
-    category: ' houseing'
-  },
-  {
-    id: 'id3',
-    name: 'Vr-headset',
-    amount: 24.99,
-    category: 'tech'
-  },
-  {
-    id: 'id4',
-    name: 'Phone',
-    amount: -14.99,
-    category: 'tech'
-  },
-  {
-    id: 'id5',
-    name: 'Unknown',
-    amount: -2.99,
-    category: 'unknown'
-  },
-  {
-    id: 'id6',
-    name: 'Buss ticket',
-    amount: -4.95,
-    category: 'transportation'
-  },
-  {
-    id: 'id7',
-    name: 'Unknown',
-    amount: 0,
-    category: 'unknown'
-  },
-  {
-    id: 'id8',
-    name: 'Subway',
-    amount: -14.95,
-    category: 'food'
-  },
+
 ])
 
 const balance = computed(() => {
@@ -219,6 +172,21 @@ const deleteEntry = (entryId) => {
 // console.log(currencyFormat(4999.99));  // Output: "+ £ 4,999.99"
 // console.log(currencyFormat(-999.00));  // Output: "- £ 999.00"
 
+import fs from 'fs'
+import path from 'path'
+
+const saveEntriesToFile = () => {
+  const dataStr = JSON.stringify(entries.value, null, 2)
+  const filePath = path.resolve(__dirname, '../storage/entries.json') // Adjust path as needed
+
+  fs.writeFile(filePath, dataStr, 'utf8', (err) => {
+    if (err) {
+      console.error('Error saving file:', err)
+    } else {
+      console.log('File saved successfully to', filePath)
+    }
+  })
+}
 </script>
 <style>
 .bg-foter {

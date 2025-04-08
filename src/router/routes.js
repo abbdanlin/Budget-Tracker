@@ -5,13 +5,12 @@ const routes = [
     children: [
       { path: '', redirect: 'entries' },
       { path: 'entries', component: () => import('pages/PageEntries.vue') },
-      { path: 'charts', component: () => import('pages/PageCharts.vue') },
+      { path: 'charts', component: () => import('pages/PageCharts.vue') }, // Page where IDs will be received
       { path: 'settings', component: () => import('pages/PageSettings.vue') },
     ],
   },
 
-  // Always leave this as last one,
-  // but you can also remove it
+  // Catch-all for undefined routes
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
