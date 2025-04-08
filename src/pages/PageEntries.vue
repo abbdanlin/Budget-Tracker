@@ -2,8 +2,8 @@
   <q-page class="">
     <div class="q-pa-md" style="">
       <q-list bordered separator>
-        <q-slide-item v-for="entry in entries" :key="entry.id" @left="onLeft" @right="onEntrySlideRight left - color="
-          positive" right-color="negative">
+        <q-slide-item v-for="entry in entries" :key="entry.id" @left="onLeft" @right="onEntrySlideRight($event, entry)"
+          left-color="positive" right-color="negative">
           <!-- <template v-slot:left>
             <q-icon name="done" />
           </template> -->
@@ -13,6 +13,10 @@
           <q-item>
             <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
               {{ entry.name }}
+            </q-item-section>
+
+            <q-item-section class="catText">
+              {{ entry.category }}
             </q-item-section>
 
             <q-item-section side class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
@@ -25,7 +29,7 @@
     <q-footer class="bg-transparent">
       <div class="row q-mb-sm q-px-md q-py-sm shadow-up-3">
         <div class="col text-grey-7 text-h6">
-          Balance
+          Total Balance
         </div>
         <div :class="useAmountColorClass(balance)" class="col text-h6 text-right">
           {{ useCurrencify(balance) }}
@@ -34,6 +38,10 @@
       <q-form @submit="addEntry" class="row q-px-sm q-pb-sm q-col-gutter-sm bg-foter">
         <div class="col">
           <q-input v-model="addEntryForm.name" ref="nameRef" placeholder="Name" bg-color="white" outlined dense />
+        </div>
+        <div class="col">
+          <q-input v-model="addEntryForm.category" ref="categoryRef" placeholder="category" bg-color="white" outlined
+            dense />
         </div>
         <div class="col">
           <q-input v-model="addEntryForm.amount" input-class="text-right" placeholders="Amount" bg-color="white"
@@ -72,28 +80,59 @@ entries
 import { ref, computed, reactive } from 'vue'
 import { useCurrencify } from 'src/use/useCurrencify'
 import { useAmountColorClass } from 'src/use/useAmountColorClass'
-import { uid } from 'quasar'
+import { uid, useQuasar } from 'quasar'
+
+const $q = useQuasar()
+
 
 const entries = ref([
   {
     id: 'id1',
     name: 'Salary',
-    amount: 5000
+    amount: 3000,
+    category: 'income'
   },
   {
     id: 'id2',
     name: 'Rent',
-    amount: -999
+    amount: -999,
+    category: ' houseing'
   },
   {
     id: 'id3',
-    name: 'Phone',
-    amount: -14.99
+    name: 'Vr-headset',
+    amount: 24.99,
+    category: 'tech'
   },
   {
     id: 'id4',
+    name: 'Phone',
+    amount: -14.99,
+    category: 'tech'
+  },
+  {
+    id: 'id5',
     name: 'Unknown',
-    amount: 0
+    amount: -2.99,
+    category: 'unknown'
+  },
+  {
+    id: 'id6',
+    name: 'Buss ticket',
+    amount: -4.95,
+    category: 'transportation'
+  },
+  {
+    id: 'id7',
+    name: 'Unknown',
+    amount: 0,
+    category: 'unknown'
+  },
+  {
+    id: 'id8',
+    name: 'Subway',
+    amount: -14.95,
+    category: 'food'
   },
 ])
 
@@ -104,15 +143,18 @@ const balance = computed(() => {
 });
 
 const nameRef = ref(null)
+const categoryRef = ref(null)
 
 const addEntryForm = reactive({
   name: '',
-  amount: null
+  amount: null,
+  category: ''
 })
 
 const addEntryFormReset = () => {
   addEntryForm.name = ''
-  addEntryForm.amount = null
+  addEntryForm.category = '',
+    addEntryForm.amount = null
   nameRef.value.focus()
 }
 
@@ -120,13 +162,44 @@ const addEntry = () => {
   const newEntry = {
     id: uid(),
     name: addEntryForm.name,
+    category: addEntryForm.category,
     amount: addEntryForm.amount
   }
   entries.value.push(newEntry)
   addEntryFormReset()
 }
-const onEntrySlideRight = () => {
-  console.log('right')
+const onEntrySlideRight = ({ reset }, entry) => {
+  reset(); // Correct way to call reset
+
+  $q.dialog({
+    title: 'Delete',
+    message: `
+      <div>Would you really like to delete it?</div>
+      <div class="q-mt-md text-weight-bold ${useAmountColorClass(entry.amount)}">
+        Rent ${entry.name} : ${useCurrencify(entry.amount)}
+      </div>
+    `,
+    html: true,
+    persistent: true,
+    ok: {
+      label: 'Delete',
+      color: 'negative',
+      noCaps: true
+    },
+    cancel: {
+      color: 'primary',
+      noCaps: true
+    }
+  }).onOk(() => {
+    deleteEntry(entry.id);
+  }).onCancel(() => {
+    reset();
+  });
+};
+
+const deleteEntry = (entryId) => {
+  const index = entries.value.findIndex(entry => entry.id === entryId)
+  entries.value.splice(index, 1)
 }
 // function currencyFormat(amount) {
 //   if (typeof amount !== 'number') return '';
@@ -150,5 +223,9 @@ const onEntrySlideRight = () => {
 <style>
 .bg-foter {
   background-color: #010038;
+}
+
+.catText {
+  font: grey;
 }
 </style>
