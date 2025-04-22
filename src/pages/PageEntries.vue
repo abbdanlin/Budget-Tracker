@@ -2,28 +2,35 @@
   <q-page class="">
     <div class="q-pa-md" style="">
       <q-list bordered separator>
-        <q-slide-item v-for="entry in entries" :key="entry.id" @left="onLeft" @right="onEntrySlideRight($event, entry)"
-          left-color="positive" right-color="negative">
-          <!-- <template v-slot:left>
-            <q-icon name="done" />
-          </template> -->
-          <template v-slot:right>
-            <q-icon name="delete" />
-          </template>
-          <q-item>
-            <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
-              {{ entry.name }}
-            </q-item-section>
-
-            <q-item-section class="catText">
-              {{ entry.category }}
-            </q-item-section>
-
-            <q-item-section side class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
-              {{ useCurrencify(entry.amount) }}
-            </q-item-section>
-          </q-item>
-        </q-slide-item>
+        <q-list bordered separator>
+          <draggable v-model="entries" item-key="id" animation="200" handle=".drag-handle" @end="saveEntriesToStorage">
+            <template #item="{ element: entry }">
+              <q-slide-item @left="onLeft" @right="onEntrySlideRight($event, entry)" left-color="positive"
+                right-color="negative">
+                <template v-slot:right>
+                  <q-icon name="delete" />
+                </template>
+                <q-item>
+                  <q-item-section avatar border-bottom border-grey-4 q-pa-xclass="drag-handle cursor-move">
+                    <q-icon name="drag_indicator" />
+                  </q-item-section>
+                  <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
+                    {{ entry.name }}
+                  </q-item-section>
+                  <q-item-section class="catText">
+                    {{ entry.category }}
+                  </q-item-section>
+                  <q-item-section side class="text-grey">
+                    {{ formatDate(entry.date) }}
+                  </q-item-section>
+                  <q-item-section side class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
+                    {{ useCurrencify(entry.amount) }}
+                  </q-item-section>
+                </q-item>
+              </q-slide-item>
+            </template>
+          </draggable>
+        </q-list>
       </q-list>
     </div>
     <q-footer class="bg-transparent">
@@ -47,6 +54,16 @@
           <q-input v-model="addEntryForm.amount" input-class="text-right" placeholders="Amount" bg-color="white"
             type="number" step="0.01" outlined dense />
         </div>
+        <q-input v-model="addEntryForm.date" label="Select Date" readonly outlined dense bg-color="white">
+          <template v-slot:append>
+            <q-icon name="event" class="cursor-pointer" />
+          </template>
+
+          <q-popup-proxy transition-show="scale" transition-hide="scale">
+            <q-date v-model="addEntryForm.date" />
+          </q-popup-proxy>
+        </q-input>
+
         <div class="col col-auto">
           <q-btn color="primary" icon="add" type="submit" round @click="saveEntriesToFile" />
         </div>
@@ -56,31 +73,22 @@
 </template>
 
 <script setup>
-// import { useRouter } from 'vue-router'
-
-// const router = useRouter()
-
-// const goTo = () => {
-//   router.go(-1)
-//   router.push('/')
-
-// }
-
-/* 
- imports
-/* 
-
-import { ref } from 'vue'
-
-/*
-entries
-*/
-
-// import { fasZ } from '@quasar/extras/fontawesome-v6'
 import { ref, computed, reactive } from 'vue'
 import { useCurrencify } from 'src/use/useCurrencify'
 import { useAmountColorClass } from 'src/use/useAmountColorClass'
 import { uid, useQuasar } from 'quasar'
+import { onMounted } from 'vue'
+import { LocalStorage } from 'quasar'
+import { date as $date } from 'quasar'
+
+import fs from 'fs'
+import path from 'path'
+import draggable from 'vuedraggable'
+
+const formatDate = (val) => {
+  if (!val) return ''
+  return $date.formatDate(val, 'DD/MM-YY')
+}
 
 const $q = useQuasar()
 
@@ -101,8 +109,14 @@ const categoryRef = ref(null)
 const addEntryForm = reactive({
   name: '',
   amount: null,
-  category: ''
+  category: '',
+  date: ''
 })
+
+const saveEntriesToStorage = () => {
+  LocalStorage.set('entries', entries.value)
+}
+
 
 const addEntryFormReset = () => {
   addEntryForm.name = ''
@@ -116,13 +130,15 @@ const addEntry = () => {
     id: uid(),
     name: addEntryForm.name,
     category: addEntryForm.category,
-    amount: addEntryForm.amount
+    amount: addEntryForm.amount,
+    date: addEntryForm.date
   }
   entries.value.push(newEntry)
+  saveEntriesToStorage()
   addEntryFormReset()
 }
 const onEntrySlideRight = ({ reset }, entry) => {
-  reset(); // Correct way to call reset
+  reset();
 
   $q.dialog({
     title: 'Delete',
@@ -153,32 +169,12 @@ const onEntrySlideRight = ({ reset }, entry) => {
 const deleteEntry = (entryId) => {
   const index = entries.value.findIndex(entry => entry.id === entryId)
   entries.value.splice(index, 1)
+  saveEntriesToStorage()
 }
-// function currencyFormat(amount) {
-//   if (typeof amount !== 'number') return '';
-
-//   let posNegSymbol = amount < 0 ? '-' : '+';
-//   const currencySymbol = '£';
-
-//   const amountFormatted = Math.abs(amount).toLocaleString('en-US', {
-//     minimumFractionDigits: 2,
-//     maximumFractionDigits: 2
-//   });
-
-//   return `${posNegSymbol} ${currencySymbol} ${amountFormatted}`;
-// }
-
-// Example of using the function
-// console.log(currencyFormat(4999.99));  // Output: "+ £ 4,999.99"
-// console.log(currencyFormat(-999.00));  // Output: "- £ 999.00"
-
-import fs from 'fs'
-import path from 'path'
 
 const saveEntriesToFile = () => {
   const dataStr = JSON.stringify(entries.value, null, 2)
-  const filePath = path.resolve(__dirname, '../storage/entries.json') // Adjust path as needed
-
+  const filePath = path.resolve(__dirname, '../storage/entries.json')
   fs.writeFile(filePath, dataStr, 'utf8', (err) => {
     if (err) {
       console.error('Error saving file:', err)
@@ -187,6 +183,12 @@ const saveEntriesToFile = () => {
     }
   })
 }
+onMounted(() => {
+  const stored = LocalStorage.getItem('entries')
+  if (stored) {
+    entries.value = stored
+  }
+})
 </script>
 <style>
 .bg-foter {
