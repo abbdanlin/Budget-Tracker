@@ -1,10 +1,14 @@
 <template>
-    <div class="chart">
-        <Pie :data="chartData" :options="chartOptions" />
-    </div>
-    <div class="chart">
-        <Line :data="lineChartData" :options="lineChartOptions" />
-    </div>
+    <q-page class="flex flex-center">
+        <div style="max-width: 1000px; width: 100%;" class="column items-center">
+            <div class="chart full-width">
+                <Pie :data="chartData" :options="chartOptions" class="full-width" />
+            </div>
+            <div class="chart full-width">
+                <Line :data="lineChartData" :options="lineChartOptions" class="full-width" />
+            </div>
+        </div>
+    </q-page>
 </template>
 
 <script setup>
