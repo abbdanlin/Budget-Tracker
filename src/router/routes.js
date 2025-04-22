@@ -7,6 +7,7 @@ const routes = [
       { path: 'entries', component: () => import('pages/PageEntries.vue') },
       { path: 'charts', component: () => import('pages/PageCharts.vue') }, // Page where IDs will be received
       { path: 'settings', component: () => import('pages/PageSettings.vue') },
+      { path: 'table', component: () => import('pages/PageTable.vue') },
     ],
   },
 
