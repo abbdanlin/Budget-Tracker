@@ -1,64 +1,61 @@
 <template>
   <q-page class="">
-    <div class="q-pa-md" style="">
+    <div class="q-pa-md">
       <q-list bordered separator>
-        <q-list bordered separator>
-          <draggable v-model="entries" item-key="id" animation="200" handle=".drag-handle" @end="saveEntriesToStorage">
-            <template #item="{ element: entry }">
-              <q-slide-item @left="onLeft" @right="onEntrySlideRight($event, entry)" left-color="positive"
-                right-color="negative">
-                <template v-slot:right>
-                  <q-icon name="delete" />
-                </template>
-                <q-item>
-                  <q-item-section avatar border-bottom border-grey-4 q-pa-xclass="drag-handle cursor-move">
-                    <q-icon name="drag_indicator" />
-                  </q-item-section>
-                  <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
-                    {{ entry.name }}
-                  </q-item-section>
-                  <q-item-section class="catText">
-                    {{ entry.category }}
-                  </q-item-section>
-                  <q-item-section side class="text-grey">
-                    {{ formatDate(entry.date) }}
-                  </q-item-section>
-                  <q-item-section side class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
-                    {{ useCurrencify(entry.amount) }}
-                  </q-item-section>
-                </q-item>
-              </q-slide-item>
-            </template>
-          </draggable>
-        </q-list>
+        <draggable v-model="entries" item-key="id" animation="200" handle=".drag-handle" @end="saveEntriesToStorage">
+          <template #item="{ element: entry }">
+            <q-slide-item @left="(event) => onLeft(event, entry)" @right="(event) => onEntrySlideRight(event, entry)"
+              left-color="positive" right-color="negative">
+              <template v-slot:right>
+                <q-icon name="delete" />
+              </template>
+              <q-item>
+                <q-item-section avatar class="drag-handle cursor-move">
+                  <q-icon name="drag_indicator" />
+                </q-item-section>
+                <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
+                  {{ entry.name }}
+                </q-item-section>
+                <q-item-section class="catText">
+                  {{ entry.category }}
+                </q-item-section>
+                <q-item-section side class="text-grey">
+                  {{ formatDate(entry.date) }}
+                </q-item-section>
+                <q-item-section side class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
+                  {{ useCurrencify(entry.amount) }}
+                </q-item-section>
+              </q-item>
+            </q-slide-item>
+          </template>
+        </draggable>
       </q-list>
     </div>
+
     <q-footer class="bg-transparent">
       <div class="row q-mb-sm q-px-md q-py-sm shadow-up-3">
-        <div class="col text-grey-7 text-h6">
-          Total Balance
-        </div>
+        <div class="col text-grey-7 text-h6">Total Balance</div>
         <div :class="useAmountColorClass(balance)" class="col text-h6 text-right">
           {{ useCurrencify(balance) }}
         </div>
       </div>
+
       <q-form @submit="addEntry" class="row q-px-sm q-pb-sm q-col-gutter-sm bg-foter">
         <div class="col">
           <q-input v-model="addEntryForm.name" ref="nameRef" placeholder="Name" bg-color="white" outlined dense />
         </div>
         <div class="col">
-          <q-input v-model="addEntryForm.category" ref="categoryRef" placeholder="category" bg-color="white" outlined
+          <q-input v-model="addEntryForm.category" ref="categoryRef" placeholder="Category" bg-color="white" outlined
             dense />
         </div>
         <div class="col">
-          <q-input v-model="addEntryForm.amount" input-class="text-right" placeholders="Amount" bg-color="white"
+          <q-input v-model="addEntryForm.amount" input-class="text-right" placeholder="Amount" bg-color="white"
             type="number" step="0.01" outlined dense />
         </div>
         <q-input v-model="addEntryForm.date" label="Select Date" readonly outlined dense bg-color="white">
           <template v-slot:append>
             <q-icon name="event" class="cursor-pointer" />
           </template>
-
           <q-popup-proxy transition-show="scale" transition-hide="scale">
             <q-date v-model="addEntryForm.date" />
           </q-popup-proxy>
@@ -164,6 +161,16 @@ const onEntrySlideRight = ({ reset }, entry) => {
   }).onCancel(() => {
     reset();
   });
+};
+
+const onLeft = ({ reset }, entry) => {
+  // Example action on swipe left
+  $q.notify({
+    color: 'info',
+    message: `Swiped left on: ${entry.name}`
+  });
+
+  reset();
 };
 
 const deleteEntry = (entryId) => {
