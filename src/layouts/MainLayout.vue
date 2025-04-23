@@ -50,7 +50,7 @@ const navLinks = [
   { label: 'Entries', icon: 'list', to: '/entries' },
   { label: 'Table', icon: 'table_chart', to: '/table' },
   { label: 'Charts', icon: 'bar_chart', to: '/charts' },
-  { label: 'Overview', icon: 'bar_chart', to: '/overview' },
+  { label: 'Overview', icon: 'wallet', to: '/overview' },
   { label: 'Settings', icon: 'settings', to: '/settings' }
 ]
 
