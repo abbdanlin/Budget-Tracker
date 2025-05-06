@@ -1,25 +1,28 @@
 <template>
-    <q-page class="flex flex-center">
-        <div style="max-width: 1000px; width: 100%;" class="column items-center">
-            <!-- Doughnut chart with summary box in the middle -->
-            <div class="chart full-width" style="position: relative;">
+    <q-page class="q-pa-md flex flex-center">
+        <div class="column items-center" style="max-width: 1000px; width: 100%;">
+            <!-- Doughnut Chart with Summary Box -->
+            <div class="chart full-width q-mb-md" style="position: relative;">
                 <Doughnut :data="doughnutChartData" :options="doughnutChartOptions" class="full-width" />
-
-                <!-- Summary Box -->
                 <div class="summary-box">
                     <div class="summary-text">{{ totalAmount + '£' }}</div>
                     <div class="summary-label">Summary</div>
                 </div>
             </div>
 
-            <!-- Cirkeldiagram -->
-            <div class="chart full-width">
+            <!-- Pie Chart -->
+            <div class="chart full-width q-mb-md">
                 <Pie :data="chartData" :options="chartOptions" class="full-width" />
             </div>
 
-            <!-- Linjediagram -->
-            <div class="chart full-width">
+            <!-- Line Chart -->
+            <div class="chart full-width q-mb-md">
                 <Line :data="lineChartData" :options="lineChartOptions" class="full-width" />
+            </div>
+
+            <!-- Bar Chart at the Bottom -->
+            <div class="chart full-width">
+                <Bar :data="barChartData" :options="barChartOptions" class="full-width" />
             </div>
         </div>
     </q-page>
@@ -37,27 +40,30 @@ import {
     ArcElement,
     LineElement,
     PointElement,
+    BarElement,       // ✅ Import BarElement
     LineController,
+    BarController,    // ✅ Import BarController
     CategoryScale,
     LinearScale,
     TimeScale,
     Filler
 } from 'chart.js'
 
-// date‑fns adapter for the time scale
 import 'chartjs-adapter-date-fns'
 
-import { Pie, Line, Doughnut } from 'vue-chartjs'
+import { Pie, Line, Doughnut, Bar } from 'vue-chartjs'
 
-// --- 1. Register everything just once ---
+// ✅ Register all chart components, including Bar
 ChartJS.register(
     Title,
     Tooltip,
     Legend,
     ArcElement,
     LineElement,
+    BarElement,       // ✅ Register
     PointElement,
     LineController,
+    BarController,    // ✅ Register
     CategoryScale,
     LinearScale,
     TimeScale,
@@ -70,7 +76,7 @@ onMounted(() => {
     entries.value = LocalStorage.getItem('entries') || []
 })
 
-// --- 2. Doughnut chart setup ---
+// Doughnut Chart
 const doughnutChartData = computed(() => ({
     labels: entries.value.map(e => e.name),
     datasets: [
@@ -94,12 +100,11 @@ const doughnutChartOptions = {
     }
 }
 
-// --- 3. Total Amount in the center of the doughnut ---
-const totalAmount = computed(() => {
-    return entries.value.reduce((accumulator, { amount }) => accumulator + Number(amount), 0).toFixed(2)
-})
+const totalAmount = computed(() =>
+    entries.value.reduce((acc, { amount }) => acc + Number(amount), 0).toFixed(2)
+)
 
-// --- 4. Pie chart setup ---
+// Pie Chart
 const chartData = computed(() => ({
     labels: entries.value.map(e => e.name),
     datasets: [
@@ -122,10 +127,9 @@ const chartOptions = {
     }
 }
 
-// --- 5. Line chart setup ---
+// Line Chart
 const lineChartData = computed(() => {
-    // Clone and sort the entries by date
-    const sortedEntries = [...entries.value].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedEntries = [...entries.value].sort((a, b) => new Date(a.date) - new Date(b.date))
 
     return {
         datasets: [
@@ -170,15 +174,40 @@ const lineChartOptions = {
         title: { display: true, text: 'Transaction Trend' }
     }
 }
-</script>
 
+// Bar Chart
+const barChartData = computed(() => ({
+    labels: entries.value.map(e => e.name),
+    datasets: [
+        {
+            label: 'Amount',
+            data: entries.value.map(e => e.amount),
+            backgroundColor: entries.value.map(e =>
+                e.amount >= 0 ? '#64B5F6' : '#E57373'
+            )
+        }
+    ]
+}))
+
+const barChartOptions = {
+    responsive: true,
+    plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: 'Bar Chart: Amounts per Entry' }
+    },
+    scales: {
+        y: {
+            beginAtZero: true
+        }
+    }
+}
+</script>
 
 <style>
 .chart {
     margin-top: 5%;
     margin-left: 6.5%;
     position: relative;
-    /* Ensures positioning of the summary box */
 }
 
 .summary-box {
