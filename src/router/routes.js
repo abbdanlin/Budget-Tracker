@@ -5,14 +5,13 @@ const routes = [
     children: [
       { path: '', redirect: 'entries' },
       { path: 'entries', component: () => import('pages/PageEntries.vue') },
-      { path: 'charts', component: () => import('pages/PageCharts.vue') }, // Page where IDs will be received
+      { path: 'charts', component: () => import('pages/PageCharts.vue') },
       { path: 'settings', component: () => import('pages/PageSettings.vue') },
       { path: 'overview', component: () => import('pages/PageOverview.vue') },
+      { path: 'Ai', component: () => import('pages/PageFront.vue') },
       { path: 'table', component: () => import('pages/PageTable.vue') },
     ],
   },
-
-  // Catch-all for undefined routes
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
