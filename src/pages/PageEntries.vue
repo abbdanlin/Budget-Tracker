@@ -16,9 +16,10 @@
                 <q-item-section class="text-weight-bold" :class="useAmountColorClass(entry.amount)">
                   {{ entry.name }}
                 </q-item-section>
-                <q-item-section class="catText">
+                <q-item-section :class="['catText', categoryColorClass(entry.category)]">
                   {{ entry.category }}
                 </q-item-section>
+
                 <q-item-section side class="text-grey">
                   {{ formatDate(entry.date) }}
                 </q-item-section>
@@ -65,40 +66,48 @@
           <q-btn color="primary" icon="add" type="submit" round @click="saveEntriesToFile" />
         </div>
       </q-form>
+
+      <!-- AI-rådgivare -->
+      <q-form @submit.prevent="askAI">
+        <div class="row q-gutter-sm q-mt-md">
+          <div class="col">
+            <q-input v-model="aiQuestion" label="Fråga din AI-rådgivare" outlined dense />
+          </div>
+          <div class="col-auto">
+            <q-btn icon="send" color="primary" @click="askAI" />
+          </div>
+        </div>
+        <div v-if="aiAnswer" class="q-mt-sm bg-grey-2 q-pa-sm">
+          <div class="text-bold">AI Svar:</div>
+          <div>{{ aiAnswer }}</div>
+        </div>
+      </q-form>
     </q-footer>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useCurrencify } from 'src/use/useCurrencify'
 import { useAmountColorClass } from 'src/use/useAmountColorClass'
-import { uid, useQuasar } from 'quasar'
-import { onMounted } from 'vue'
-import { LocalStorage } from 'quasar'
-import { date as $date } from 'quasar'
-
+import { uid, useQuasar, LocalStorage, date as $date } from 'quasar'
+import draggable from 'vuedraggable'
+import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
-import draggable from 'vuedraggable'
+
+const $q = useQuasar()
+
+const entries = ref([])
 
 const formatDate = (val) => {
   if (!val) return ''
   return $date.formatDate(val, 'DD/MM-YY')
 }
 
-const $q = useQuasar()
-
-
-const entries = ref([
-
-])
-
-const balance = computed(() => {
-  return entries.value.reduce((accumulator, { amount }) => {
-    return accumulator + (Number(amount) || 0);
-  }, 0);
-});
+const balance = computed(() =>
+  entries.value.reduce((acc, { amount }) => acc + (Number(amount) || 0), 0)
+)
 
 const nameRef = ref(null)
 const categoryRef = ref(null)
@@ -110,15 +119,28 @@ const addEntryForm = reactive({
   date: ''
 })
 
+const aiQuestion = ref('')
+const aiAnswer = ref('')
+
+const askAI = async () => {
+  try {
+    const res = await axios.post('http://localhost:3000/ask-advisor', {
+      question: aiQuestion.value
+    })
+    aiAnswer.value = res.data.answer
+  } catch {
+    $q.notify({ type: 'negative', message: 'AI-förfrågan misslyckades' })
+  }
+}
+
 const saveEntriesToStorage = () => {
   LocalStorage.set('entries', entries.value)
 }
 
-
 const addEntryFormReset = () => {
   addEntryForm.name = ''
-  addEntryForm.category = '',
-    addEntryForm.amount = null
+  addEntryForm.category = ''
+  addEntryForm.amount = null
   nameRef.value.focus()
 }
 
@@ -134,44 +156,48 @@ const addEntry = () => {
   saveEntriesToStorage()
   addEntryFormReset()
 }
-const onEntrySlideRight = ({ reset }, entry) => {
-  reset();
 
+const onEntrySlideRight = ({ reset }, entry) => {
+  reset()
   $q.dialog({
     title: 'Delete',
     message: `
-      <div>Would you really like to delete it?</div>
+      <div>Vill du ta bort detta?</div>
       <div class="q-mt-md text-weight-bold ${useAmountColorClass(entry.amount)}">
-        Rent ${entry.name} : ${useCurrencify(entry.amount)}
+        ${entry.name} : ${useCurrencify(entry.amount)}
       </div>
     `,
     html: true,
     persistent: true,
-    ok: {
-      label: 'Delete',
-      color: 'negative',
-      noCaps: true
-    },
-    cancel: {
-      color: 'primary',
-      noCaps: true
-    }
-  }).onOk(() => {
-    deleteEntry(entry.id);
-  }).onCancel(() => {
-    reset();
-  });
-};
+    ok: { label: 'Delete', color: 'negative', noCaps: true },
+    cancel: { color: 'primary', noCaps: true }
+  }).onOk(() => deleteEntry(entry.id))
+}
 
 const onLeft = ({ reset }, entry) => {
-  // Example action on swipe left
   $q.notify({
     color: 'info',
     message: `Swiped left on: ${entry.name}`
-  });
+  })
+  reset()
+}
 
-  reset();
-};
+const categoryColorClass = (category) => {
+  switch (category?.toLowerCase()) {
+    case 'mat':
+      return 'text-green-8';
+    case 'transport':
+      return 'text-blue-8';
+    case 'nöje':
+      return 'text-orange-8';
+    case 'hyra':
+      return 'text-red-8';
+    case 'lön':
+      return 'text-teal-8';
+    default:
+      return 'text-grey';
+  }
+}
 
 const deleteEntry = (entryId) => {
   const index = entries.value.findIndex(entry => entry.id === entryId)
@@ -190,13 +216,13 @@ const saveEntriesToFile = () => {
     }
   })
 }
+
 onMounted(() => {
   const stored = LocalStorage.getItem('entries')
-  if (stored) {
-    entries.value = stored
-  }
+  if (stored) entries.value = stored
 })
 </script>
+
 <style>
 .bg-foter {
   background-color: #010038;
